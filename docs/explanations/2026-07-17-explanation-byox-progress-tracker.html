@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>byox progress tracker — change explanation</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1a2230; --muted:#5b6676; --faint:#8a94a3;
+    --line:#e2e7ee; --card:#f6f8fb; --accent:#0e7490; --accent-soft:#0e74901a;
+    --ok:#1a7f37; --ok-soft:#1a7f371a; --bad:#cf222e; --bad-soft:#cf222e1a;
+    --code-bg:#f2f5f9;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0d1117; --fg:#c9d4e0; --muted:#8b96a5; --faint:#6b7684;
+      --line:#2b333d; --card:#161b22; --accent:#38bdf8; --accent-soft:#38bdf81f;
+      --ok:#3fb950; --ok-soft:#3fb9501f; --bad:#f85149; --bad-soft:#f851491f;
+      --code-bg:#161b22;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65; font-size:17px}
+  .wrap{max-width:min(48rem,92vw); margin:0 auto; padding:2.2rem 0 5rem}
+  h1{font-size:1.85rem; line-height:1.2; margin:0 0 .3rem}
+  .sub{color:var(--muted); margin:0 0 1.6rem; font-size:.98rem}
+  h2{font-size:1.35rem; margin:2.6rem 0 .8rem; padding-top:.6rem; border-top:1px solid var(--line)}
+  h3{font-size:1.05rem; margin:1.6rem 0 .4rem}
+  p{margin:.7rem 0}
+  a{color:var(--accent)}
+  code{background:var(--code-bg); padding:.1em .35em; border-radius:4px; font-size:.86em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  pre{background:var(--code-bg); border:1px solid var(--line); border-radius:9px;
+    padding:.9rem 1rem; overflow-x:auto; white-space:pre-wrap; font-size:.82rem; line-height:1.5;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  pre .add{color:var(--ok)} pre .del{color:var(--bad)} pre .cmt{color:var(--faint)}
+  .toc{background:var(--card); border:1px solid var(--line); border-radius:11px;
+    padding:1rem 1.2rem; margin:1.4rem 0 0}
+  .toc strong{font-size:.8rem; letter-spacing:.06em; text-transform:uppercase; color:var(--faint)}
+  .toc ol{margin:.5rem 0 0; padding-left:1.2rem}
+  .toc a{text-decoration:none}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:11px;
+    padding:1.1rem 1.2rem; margin:1.2rem 0}
+  .lead{font-size:1.05rem; color:var(--fg)}
+  .note{color:var(--muted); font-size:.95rem}
+
+  /* diagrams */
+  .diagram{display:flex; flex-wrap:wrap; gap:.7rem; align-items:stretch; margin:1.1rem 0}
+  .box{flex:1 1 150px; background:var(--bg); border:1px solid var(--line);
+    border-radius:9px; padding:.7rem .8rem; font-size:.85rem}
+  .box b{display:block; font-size:.72rem; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--faint); margin-bottom:.35rem}
+  .row-demo{display:flex; align-items:center; gap:.5rem; padding:.55rem .7rem; border-radius:8px;
+    border:1px solid var(--line); background:var(--bg); margin:.4rem 0; font-size:.9rem}
+  .row-demo.done{border-left:4px solid var(--ok); background:var(--ok-soft)}
+  .check{color:var(--ok); font-weight:700}
+  .pill{font-size:.68rem; padding:1px 7px; border-radius:5px; border:1px solid var(--ok);
+    background:var(--ok-soft); color:var(--muted); font-family:ui-monospace,monospace}
+  .arrow{align-self:center; color:var(--faint); font-size:1.4rem; padding:0 .1rem}
+  .flow{display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; margin:1rem 0}
+  .flow .box{flex:0 1 auto; min-width:120px; text-align:center}
+
+  /* micro-world */
+  .sim{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.1rem 1.2rem}
+  .sim h3{margin-top:0}
+  .devs{display:flex; flex-wrap:wrap; gap:.8rem}
+  .dev{flex:1 1 210px; background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:.8rem}
+  .dev b{font-size:.78rem; letter-spacing:.05em; text-transform:uppercase; color:var(--faint)}
+  .fld{display:flex; align-items:center; gap:.4rem; margin:.45rem 0; font-size:.85rem; flex-wrap:wrap}
+  .fld label{color:var(--muted); min-width:38px}
+  .fld input[type=text]{flex:1 1 90px; min-width:70px; background:var(--code-bg); color:var(--fg);
+    border:1px solid var(--line); border-radius:6px; padding:.25rem .45rem; font-size:.82rem}
+  .fld input[type=number]{width:64px; background:var(--code-bg); color:var(--fg);
+    border:1px solid var(--line); border-radius:6px; padding:.25rem .45rem; font-size:.82rem}
+  .btnrow{display:flex; gap:.6rem; flex-wrap:wrap; margin:1rem 0 .3rem}
+  button.act{background:var(--accent); color:#fff; border:none; border-radius:8px;
+    padding:.5rem .9rem; font-size:.9rem; cursor:pointer; font-weight:600}
+  @media (prefers-color-scheme: dark){ button.act{color:#05202b} }
+  button.ghost{background:transparent; color:var(--accent); border:1px solid var(--accent)}
+  .result{margin-top:1rem; padding:.8rem 1rem; border-radius:9px; background:var(--bg);
+    border:1px solid var(--line); font-size:.9rem}
+  .win{color:var(--ok); font-weight:600}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.85em}
+
+  /* quiz */
+  .q{margin:1.4rem 0; padding:1rem 1.1rem; background:var(--card); border:1px solid var(--line); border-radius:11px}
+  .q .stem{font-weight:600; margin-bottom:.6rem}
+  .opt{display:block; width:100%; text-align:left; background:var(--bg); color:var(--fg);
+    border:1px solid var(--line); border-radius:8px; padding:.55rem .75rem; margin:.4rem 0;
+    font-size:.92rem; cursor:pointer; transition:background .12s,border-color .12s}
+  .opt:hover{border-color:var(--accent)}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft)}
+  .opt.wrong{border-color:var(--bad); background:var(--bad-soft)}
+  .opt:disabled{cursor:default}
+  .rationale{margin-top:.5rem; font-size:.88rem; color:var(--muted); display:none}
+  .rationale.show{display:block}
+  .score{position:sticky; bottom:0; margin-top:1.6rem; padding:.7rem 1rem; text-align:center;
+    background:var(--accent-soft); border:1px solid var(--accent); border-radius:9px; font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Turning a static ladder into a synced progress tracker</h1>
+  <p class="sub">Change explanation · <code>build-your-x</code> @ <code>ff4cf9f</code> · 2026-07-17</p>
+
+  <p class="lead">The build-your-own-x repo used to be a read-only wall of ~359 tutorials
+  sorted by difficulty. This change turns it into something you <em>work through</em>: a
+  <code>byox</code> command to mark guides done and note where you built them, a dashboard that
+  shows your progress, and cross-device sync so your progress follows you between machines.</p>
+
+  <nav class="toc">
+    <strong>Contents</strong>
+    <ol>
+      <li><a href="#background">Background — what was here before</a></li>
+      <li><a href="#intuition">Intuition — the two new ideas</a></li>
+      <li><a href="#code">Code — a walk through the change</a></li>
+      <li><a href="#quiz">Quiz — check your understanding</a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ BACKGROUND ============ -->
+  <h2 id="background">1 · Background</h2>
+
+  <p>The repo started life as a tiny <strong>static-site generator</strong>. One script,
+  <code>parse_guides.py</code>, reads a copy of the upstream build-your-own-x README and emits
+  <code>guides.json</code> — a list of ~359 tutorials, each with a <code>title</code>,
+  <code>url</code>, <code>tier</code> (beginner…expert) and a difficulty <code>score</code>. A second
+  script, <code>build_pages.py</code>, injects that JSON into an HTML template and writes
+  <code>guide-ladder.html</code>: a single offline page you open with <code>file://</code>, with search
+  and tier/language filters.</p>
+
+  <p>Crucially, that page was <strong>stateless</strong>. There was no notion of "I finished this
+  one." Nowhere did the code record completion, and nothing stored <em>what</em> you built. If you
+  wanted to track progress you did it in your head.</p>
+
+  <div class="card note">
+    Two facts about the old code matter for the change:
+    <ul style="margin:.5rem 0 0">
+      <li><code>parse_guides.parse_readme()</code> ends with
+        <code>guides.sort(key=lambda g:(g.score, g.title.lower()))</code> — the list is
+        <strong>re-sorted every rebuild</strong>. So a guide's position in the list is not stable.</li>
+      <li><code>build_pages.build_guide_page()</code> works by string-replacing a marker
+        (<code>/*__GUIDES__*/</code>) in the template with <code>const GUIDES = [...]</code>. That marker
+        pattern is the hook the new progress data rides in on.</li>
+    </ul>
+  </div>
+
+  <p>The change also lifts the whole package out of a monorepo into its own repo and, alongside the
+  generator, adds the <strong>builds themselves</strong> under <code>builds/</code> — but the
+  interesting engineering is the tracker, so that's what the rest of this doc is about.</p>
+
+  <!-- ============ INTUITION ============ -->
+  <h2 id="intuition">2 · Intuition</h2>
+
+  <p>Two ideas carry the whole feature. Get these and the code reads itself.</p>
+
+  <h3>Idea 1 — progress is a tiny key–value store, keyed by URL</h3>
+
+  <p>Completion state lives in one JSON file at
+  <code>~/.local/share/byox_ladder/progress.json</code>, mapping a guide to
+  <code>{done, note, updated_ms}</code>. The subtle choice is the <strong>key</strong>. Not the title,
+  not the row number — the <strong>URL</strong>.</p>
+
+  <p>Why? Remember the list is re-sorted <code>(score, title)</code> on every rebuild, and upstream
+  titles get edited. Key on either and your "done" marks would silently drift onto the wrong guide
+  after a rebuild. The URL is the one field that stays put.</p>
+
+  <div class="diagram">
+    <div class="box"><b>progress.json</b>
+      <div class="mono" style="font-size:.78rem">{<br>
+      &nbsp;"https://citw.dev/…/create-your-own-cli-tool": {<br>
+      &nbsp;&nbsp;"done": true,<br>
+      &nbsp;&nbsp;"note": "builds/tool-tutorial",<br>
+      &nbsp;&nbsp;"updated_ms": 1784310000000<br>
+      &nbsp;}<br>}</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="box"><b>dashboard row</b>
+      <div class="row-demo done"><span class="check">✓</span> Create a CLI tool in Javascript
+        <span class="pill">builds/tool-tutorial</span></div>
+      <div class="note" style="font-size:.78rem">only <em>done</em> guides are baked in</div>
+    </div>
+  </div>
+
+  <p>At build time, <code>build_pages</code> reads that store and injects a second payload,
+  <code>const PROGRESS = {url: {done, note}}</code>, next to <code>GUIDES</code>. The template's
+  JavaScript looks each guide up by URL and draws a ✓, a green row, the build-note, and per-tier
+  progress bars. The page stays a pure offline file — the state is <em>baked in</em>, not stored in
+  the browser.</p>
+
+  <h3>Idea 2 — sync is a per-device log that merges by "latest wins"</h3>
+
+  <p>To follow you across machines, progress rides on the shared <code>crdt_sync</code> library. There's
+  no server: each device writes its <em>own</em> file to a private GitHub repo at
+  <code>byox-ladder/devices/&lt;device&gt;/log.json</code>, and on each sync pulls the
+  <em>other</em> devices' files and merges them.</p>
+
+  <p>Merge is <strong>last-writer-wins per field</strong>, ordered by a hybrid-logical-clock timestamp
+  seeded from <code>updated_ms</code>. If your laptop marked a guide done at <code>t=300</code> and your
+  desktop noted it at <code>t=100</code>, the <code>t=300</code> edit wins; distinct guides from each
+  device simply union together.</p>
+
+  <div class="flow">
+    <div class="box"><b>archlinux</b> cli-tool<br>done @ t=300</div>
+    <div class="arrow">⇄</div>
+    <div class="box" style="border-color:var(--accent)"><b>kuhyx/syncs</b><br>byox-ladder/devices/…</div>
+    <div class="arrow">⇄</div>
+    <div class="box"><b>laptop</b> database<br>done @ t=200</div>
+  </div>
+  <p class="note">After a sync each side holds <em>both</em> guides. Play with the exact rule below.</p>
+
+  <!-- micro-world -->
+  <div class="sim" id="sim">
+    <h3>▶ Micro-world: step the merge</h3>
+    <p class="note">Two devices, each tracking one guide by URL. Edit the fields and press
+    <b>Merge</b> to run the real rule: union the URLs; for a shared URL, the higher timestamp wins
+    the whole entry (that's how the adapter stamps both fields with one clock).</p>
+    <div class="devs">
+      <div class="dev">
+        <b>Device A — archlinux</b>
+        <div class="fld"><label>url</label><input type="text" id="a_url" value="cli-tool"></div>
+        <div class="fld"><label>note</label><input type="text" id="a_note" value="builds/tool-tutorial"></div>
+        <div class="fld"><label>done</label><input type="checkbox" id="a_done" checked>
+          <label>t</label><input type="number" id="a_ts" value="300"></div>
+      </div>
+      <div class="dev">
+        <b>Device B — laptop</b>
+        <div class="fld"><label>url</label><input type="text" id="b_url" value="cli-tool"></div>
+        <div class="fld"><label>note</label><input type="text" id="b_note" value="builds/cli-v2"></div>
+        <div class="fld"><label>done</label><input type="checkbox" id="b_done" checked>
+          <label>t</label><input type="number" id="b_ts" value="100"></div>
+      </div>
+    </div>
+    <div class="btnrow">
+      <button class="act" id="mergeBtn">Merge</button>
+      <button class="ghost act" id="sameUrl">Make URLs differ</button>
+    </div>
+    <div class="result" id="mergeOut">Press <b>Merge</b> to see the resolved store.</div>
+    <p class="note" style="margin-top:.7rem">Try: same URL, flip which timestamp is larger — the
+    later edit's note wins. Then press "Make URLs differ" and merge — both guides survive.</p>
+  </div>
+
+  <!-- ============ CODE ============ -->
+  <h2 id="code">3 · Code</h2>
+  <p>Grouped by concern rather than by file. Five new modules plus edits to the builder and template.</p>
+
+  <h3>a · The progress store — <code>_progress.py</code></h3>
+  <p>A dataclass plus load/save. Two details earn their keep: the URL key, and an
+  <strong>atomic</strong> write (temp file then <code>replace</code>) so a crash mid-write can't
+  truncate your progress. Reads tolerate a missing or corrupt file by returning an empty store —
+  losing local progress must never crash the CLI.</p>
+  <pre><span class="cmt"># key = guide URL (the only rebuild-stable id)</span>
+<span class="add">def mark(progress, url, *, done=None, note=None, when_ms=None):</span>
+<span class="add">    entry = progress.get(url) or ProgressEntry(url, False, "", stamp)</span>
+<span class="add">    if done is not None: entry.done = done      # only touch fields passed</span>
+<span class="add">    if note is not None: entry.note = note</span>
+<span class="add">    entry.updated_ms = stamp                    # bump so this edit wins merges</span></pre>
+
+  <h3>b · Naming a guide loosely — <code>_resolve.py</code></h3>
+  <p>You don't want to paste a URL every time. <code>resolve()</code> takes a loose token and tries,
+  <em>in order of specificity</em>: exact URL → URL/slug substring → title substring. The first level
+  that matches decides — and if <em>several</em> match at that level, it raises with the candidate
+  list instead of silently guessing.</p>
+  <pre><span class="add">picked = _pick(url_matches, query)   # 1 → return, &gt;1 → raise w/ candidates</span>
+<span class="add">if picked is not None: return picked</span>
+<span class="add">title_matches = [g for g in guides if lowered in g["title"].lower()]</span>
+<span class="cmt"># byox done "cli"  → ambiguous, lists 7 guides, exit 1</span>
+<span class="cmt"># byox done "cli-tool" → unique, marks it</span></pre>
+
+  <h3>c · The CLI — <code>_cli.py</code> + <code>__main__.py</code></h3>
+  <p>An argparse dispatcher for <code>done / undone / note / status / build / sync</code>. Output goes
+  through a small <code>_emit()</code> writer (not <code>print</code>) so tests can capture it and the
+  strict linter stays happy. A single <code>except GuideResolutionError</code> at the top turns any
+  resolution problem into a friendly message plus the candidate list.</p>
+
+  <h3>d · Baking progress into the page — <code>build_pages.py</code> + template</h3>
+  <p>The builder gains a second marker. It now reads the store, keeps only <em>done</em> guides, and
+  injects them beside the guides list. The template's JS looks each guide up by URL to draw the ✓,
+  note, per-tier bars, and a "hide completed" filter.</p>
+  <pre>  for marker in (MARKER, PROGRESS_MARKER):
+      if marker not in template:
+          raise ValueError(...)                <span class="cmt"># both must exist</span>
+  page = template.replace(MARKER, f"const GUIDES = {inline(guides)};")
+  <span class="add">page = page.replace(PROGRESS_MARKER, f"const PROGRESS = {inline(done_only)};")</span></pre>
+  <p class="note">A subtle bug fixed during review: the build-note badge first reused the CSS class
+  <code>.note</code>, which the header's explanatory paragraph also used. The badge's
+  <code>white-space:nowrap</code> then leaked onto that paragraph and made it overflow off-screen.
+  Renaming the badge to <code>.buildnote</code> fixed it — a reminder that global CSS class names are
+  a shared namespace.</p>
+
+  <h3>e · Sync — <code>_sync.py</code> (+ units, <code>install.sh</code>)</h3>
+  <p>The adapters translate the store to and from <code>crdt_sync</code> records
+  (<code>progress_to_log</code> / <code>log_to_progress</code>), stamping each field with an HLC seeded
+  from <code>updated_ms</code>. <code>run_sync()</code> reads the token, and if it's absent returns a
+  benign <em>unconfigured</em> outcome — sync is optional, the tool works fully offline. A real
+  network error is caught and reported, never raised past this boundary.</p>
+  <pre>  token = read_token(token_file)
+  <span class="add">if token is None:</span>
+  <span class="add">    return SyncOutcome("unconfigured", 0, 0, str(token_file))  # offline no-op</span>
+  try:
+      merged = sync_log(client=…, device_id=node, path_prefix=PREFIX, …)
+  <span class="add">except GitHubSyncError as exc:</span>
+  <span class="add">    return SyncOutcome("error", 0, 0, str(exc))               # logged, not raised</span></pre>
+  <div class="card note"><b>The gotcha worth remembering:</b> a device never pulls its <em>own</em>
+  remote file. So wiping local <code>progress.json</code> and syncing on the <em>same</em> machine
+  overwrites its remote with the empty state. That's fine in normal use — the local store is the
+  source of truth — but it means "restore from the cloud" only works from a <em>different</em> device.</div>
+
+  <p class="note">Backing it all: 71 tests at 100% branch coverage, a network-blocking test fixture so
+  no test hits real GitHub, and a systemd timer that runs <code>byox sync</code> every 15 minutes.</p>
+
+  <!-- ============ QUIZ ============ -->
+  <h2 id="quiz">4 · Quiz</h2>
+  <p class="note">Five questions on the <em>reasoning</em>. Click an option to reveal the answer.</p>
+  <div id="quiz"></div>
+  <div class="score" id="score">Score: 0 / 0</div>
+
+</div>
+
+<script>
+/* ---------- micro-world: the merge rule ---------- */
+(function(){
+  const $ = id => document.getElementById(id);
+  function entry(url, note, done, ts){ return {url, note, done, ts:Number(ts)}; }
+  function merge(a, b){
+    // Union by url; for a shared url, higher ts wins the whole entry (both fields
+    // share one HLC seeded from updated_ms). Ties: deterministic, keep A.
+    const out = {}; const steps = [];
+    for(const e of [a, b]){
+      const cur = out[e.url];
+      if(!cur){ out[e.url] = e; steps.push(`+ ${e.url}: added from its device`); }
+      else if(e.ts > cur.ts){ out[e.url] = e; steps.push(`~ ${e.url}: t=${e.ts} beats t=${cur.ts} → newer wins`); }
+      else { steps.push(`= ${e.url}: t=${e.ts} ≤ t=${cur.ts} → kept existing`); }
+    }
+    return {out, steps};
+  }
+  function run(){
+    const a = entry($('a_url').value.trim(), $('a_note').value, $('a_done').checked, $('a_ts').value);
+    const b = entry($('b_url').value.trim(), $('b_note').value, $('b_done').checked, $('b_ts').value);
+    const {out, steps} = merge(a, b);
+    let html = '<b>Merge steps</b><br><span class="mono">' +
+      steps.map(s=>s.replace(/</g,'&lt;')).join('<br>') + '</span><hr style="border:none;border-top:1px solid var(--line);margin:.6rem 0"><b>Resolved store</b>';
+    for(const url in out){
+      const e = out[url];
+      html += `<div class="row-demo ${e.done?'done':''}" style="margin:.4rem 0">` +
+        (e.done?'<span class="check">✓</span> ':'○ ') +
+        `<span class="mono">${url.replace(/</g,'&lt;')}</span>` +
+        (e.note?` <span class="pill">${e.note.replace(/</g,'&lt;')}</span>`:'') +
+        ` <span class="win">t=${e.ts}</span></div>`;
+    }
+    const n = Object.keys(out).length;
+    html += `<p class="note" style="margin:.5rem 0 0">${n} guide${n!==1?'s':''} in the merged store.</p>`;
+    $('mergeOut').innerHTML = html;
+  }
+  $('mergeBtn').addEventListener('click', run);
+  $('sameUrl').addEventListener('click', function(){
+    $('b_url').value = ($('b_url').value === $('a_url').value) ? 'build-db' : $('a_url').value;
+    this.textContent = ($('b_url').value === $('a_url').value) ? 'Make URLs differ' : 'Make URLs same';
+    run();
+  });
+})();
+
+/* ---------- quiz ---------- */
+const QUIZ = [
+  {
+    stem: "Why is progress keyed on each guide's URL rather than its title or list position?",
+    options: [
+      "URLs are shorter to store, so the on-disk progress JSON stays a bit smaller",
+      "The CLI only ever accepts a full guide URL as the input token you give it",
+      "The list is re-sorted every rebuild, so only the URL stays a stable id",
+      "Some guide titles contain characters that are not valid as JSON object keys here"
+    ],
+    correct: 2,
+    why: "parse_readme sorts by (score, title) each build and upstream titles get edited — key on those and 'done' marks drift onto the wrong guide."
+  },
+  {
+    stem: "You wipe local progress.json and run `byox sync` on that same machine. What happens?",
+    options: [
+      "Its remote file is overwritten with empty — a device never pulls its own file",
+      "The entries are restored, because on each sync a device re-reads its own pushed file first",
+      "Sync aborts with an error specifically to protect you from losing the just-deleted data",
+      "Nothing changes at all, because an empty local store makes the whole sync a no-op"
+    ],
+    correct: 0,
+    why: "crdt_sync pulls only OTHER devices, then pushes this device's (now empty) log — so it clobbers its own remote. Restore only works from a different device."
+  },
+  {
+    stem: "`byox done \"cli\"` is run and \"cli\" matches several guides. What does the CLI do?",
+    options: [
+      "It marks whichever matching guide currently has the highest difficulty score",
+      "It prints an ambiguity error with the candidate list and exits non-zero",
+      "It marks every guide whose title or URL happens to contain the token cli",
+      "It silently marks just the first match in the current sort order and moves on"
+    ],
+    correct: 1,
+    why: "resolve() raises GuideResolutionError with the candidates when a level has >1 match, rather than guessing; the CLI prints them and returns 1."
+  },
+  {
+    stem: "Why does build_pages inject only the *done* guides into the PROGRESS payload?",
+    options: [
+      "Because guides that aren't done yet don't have a stable URL to key them by",
+      "Because the browser's localStorage isn't big enough to hold the entire not-done set",
+      "To deliberately hide every guide you haven't finished from the ladder view",
+      "The page only renders a ✓/note for done guides, so the rest would just bloat it"
+    ],
+    correct: 3,
+    why: "The template shows the ✓ and build-note only when done, so carrying not-done entries adds page weight with no visible effect."
+  },
+  {
+    stem: "The sync token file is missing. How does `byox sync` behave, and why that way?",
+    options: [
+      "It raises an error and exits with code 1, because sync is required for it to work",
+      "It reports sync skipped and exits 0 — sync is optional and works offline",
+      "It blocks and keeps retrying until a token file eventually appears at that path",
+      "It writes out a new empty token file and then proceeds to push regardless"
+    ],
+    correct: 1,
+    why: "run_sync returns an 'unconfigured' outcome for a missing token; the CLI prints 'sync skipped' and exits 0. Offline is a first-class mode."
+  }
+];
+
+(function(){
+  const host = document.getElementById('quiz');
+  const scoreEl = document.getElementById('score');
+  let answered = 0, correct = 0;
+  QUIZ.forEach((q, qi) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'q';
+    const stem = document.createElement('div');
+    stem.className = 'stem';
+    stem.textContent = (qi+1) + '. ' + q.stem;
+    wrap.appendChild(stem);
+    const rat = document.createElement('div');
+    rat.className = 'rationale';
+    let done = false;
+    q.options.forEach((opt, oi) => {
+      const b = document.createElement('button');
+      b.className = 'opt';
+      b.textContent = opt;
+      b.addEventListener('click', () => {
+        if(done) return; done = true;
+        answered++;
+        const buttons = wrap.querySelectorAll('.opt');
+        buttons.forEach((btn,i)=>{ btn.disabled = true;
+          if(i===q.correct) btn.classList.add('correct');
+          if(i===oi && oi!==q.correct) btn.classList.add('wrong');
+        });
+        if(oi===q.correct) correct++;
+        rat.textContent = (oi===q.correct ? '✓ ' : '✗ ') + q.why;
+        rat.classList.add('show');
+        scoreEl.textContent = `Score: ${correct} / ${answered}`;
+      });
+      wrap.appendChild(b);
+    });
+    wrap.appendChild(rat);
+    host.appendChild(wrap);
+  });
+})();
+</script>
+</body>
+</html>
