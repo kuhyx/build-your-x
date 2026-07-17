@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from python_pkg.byox_ladder.parse_guides import (
+from byox_ladder.parse_guides import (
     DEFAULT_EFFORT,
     clean_title,
     lang_effort,
@@ -108,12 +108,8 @@ def test_parse_readme_ignores_lines_before_any_header() -> None:
 def test_main_missing_readme_returns_error(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(
-        "python_pkg.byox_ladder.parse_guides.README", tmp_path / "nope.md"
-    )
-    monkeypatch.setattr(
-        "python_pkg.byox_ladder.parse_guides.OUTPUT", tmp_path / "out.json"
-    )
+    monkeypatch.setattr("byox_ladder.parse_guides.README", tmp_path / "nope.md")
+    monkeypatch.setattr("byox_ladder.parse_guides.OUTPUT", tmp_path / "out.json")
     assert main() == 1
 
 
@@ -123,7 +119,7 @@ def test_main_writes_guides_json(
     readme = tmp_path / "byox-readme.md"
     readme.write_text(README_SAMPLE, encoding="utf-8")
     output = tmp_path / "guides.json"
-    monkeypatch.setattr("python_pkg.byox_ladder.parse_guides.README", readme)
-    monkeypatch.setattr("python_pkg.byox_ladder.parse_guides.OUTPUT", output)
+    monkeypatch.setattr("byox_ladder.parse_guides.README", readme)
+    monkeypatch.setattr("byox_ladder.parse_guides.OUTPUT", output)
     assert main() == 0
     assert output.exists()

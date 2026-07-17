@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodic byox progress sync
+
+[Timer]
+# Every 15 minutes, matching diet_guard's cadence (and the phone WorkManager
+# floor, for whenever a mobile companion joins the same sync repo).
+OnCalendar=*-*-* *:00/15:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

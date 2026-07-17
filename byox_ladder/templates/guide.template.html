@@ -124,6 +124,28 @@
   footer a{color:var(--accent)}
 
   @media (prefers-reduced-motion:reduce){ .row{transition:none} }
+
+  /* ---- progress tracking ---- */
+  .prog{margin:0 0 22px; padding:16px 18px; background:var(--panel); border:1px solid var(--border);
+    border-radius:12px; box-shadow:var(--shadow)}
+  .prog-top{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  .prog-top h2{margin:0; font-family:var(--font-display); font-size:.95rem; letter-spacing:.02em}
+  .prog-top .pct{font-family:var(--font-display); font-size:.9rem; color:var(--muted)}
+  .prog-top .pct b{color:var(--accent); font-size:1.05rem}
+  .prog-overall{height:9px; border-radius:999px; background:var(--panel-2); overflow:hidden; margin:11px 0 15px}
+  .prog-overall > span{display:block; height:100%; background:var(--accent); border-radius:999px}
+  .prog-tiers{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px 16px}
+  .prog-tier{font-family:var(--font-display); font-size:.72rem; color:var(--muted)}
+  .prog-tier .lbl{display:flex; justify-content:space-between; margin-bottom:4px}
+  .prog-tier .lbl b{color:var(--text)}
+  .prog-tier .bar{height:6px; border-radius:999px; background:var(--panel-2); overflow:hidden}
+  .prog-tier .bar > span{display:block; height:100%; background:var(--tc); border-radius:999px}
+
+  .row.is-done{border-left-color:var(--t1); background:var(--t1-soft)}
+  .row.is-done .title{color:var(--muted)}
+  .check{color:var(--t1); font-weight:700; margin-right:6px}
+  .buildnote{font-family:var(--font-display); font-size:.66rem; color:var(--muted);
+    background:var(--t1-soft); border:1px solid var(--t1); border-radius:5px; padding:1px 6px; white-space:nowrap}
 </style>
 
 <div class="wrap">
@@ -140,6 +162,8 @@
       Python or JS. The <b>Unsorted</b> group is the repo's own uncategorized bucket; its guides span
       all levels, so they aren't ranked.</p>
   </header>
+
+  <section class="prog" id="prog"></section>
 
   <div class="layout">
     <aside>
@@ -167,6 +191,11 @@
         <p class="ctl-label">Category</p>
         <select id="cat" class="field" aria-label="Filter by category"></select>
       </div>
+      <div class="ctl">
+        <label class="ctl-label" style="cursor:pointer; display:flex; align-items:center; gap:7px">
+          <input id="hidedone" type="checkbox"> hide completed
+        </label>
+      </div>
       <button class="reset" id="reset" type="button">reset all filters</button>
       <p class="count" id="count"></p>
     </aside>
@@ -183,6 +212,7 @@
 
 <script>
 /*__GUIDES__*/
+/*__PROGRESS__*/
 
 const TIERS = {
   beginner:     {label:"Beginner",     color:"var(--t1)", soft:"var(--t1-soft)", blurb:"app-level logic, few prerequisites"},
@@ -198,9 +228,13 @@ const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'
 
 document.getElementById("total").textContent = GUIDES.length;
 
+// PROGRESS is injected as { url: {done, note} } (empty until you run `byox done`).
+const isDone = url => !!(PROGRESS[url] && PROGRESS[url].done);
+const noteOf = url => (PROGRESS[url] && PROGRESS[url].note) || "";
+
 const state = {
   q:"", sort:"easy", lang:"all", cat:"all",
-  tiers:new Set(TIER_ORDER),
+  tiers:new Set(TIER_ORDER), hideDone:false,
 };
 
 // ---- build tier chips with counts ----
@@ -246,15 +280,18 @@ $("q").addEventListener("input", e=>{ state.q=e.target.value.toLowerCase().trim(
 $("sort").addEventListener("change", e=>{ state.sort=e.target.value; render(); });
 $("lang").addEventListener("change", e=>{ state.lang=e.target.value; render(); });
 $("cat").addEventListener("change", e=>{ state.cat=e.target.value; render(); });
+$("hidedone").addEventListener("change", e=>{ state.hideDone=e.target.checked; render(); });
 $("reset").addEventListener("click", ()=>{
   state.q=""; state.sort="easy"; state.lang="all"; state.cat="all";
-  state.tiers=new Set(TIER_ORDER);
+  state.tiers=new Set(TIER_ORDER); state.hideDone=false;
   $("q").value=""; $("sort").value="easy"; $("lang").value="all"; $("cat").value="all";
+  $("hidedone").checked=false;
   chipsEl.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed","true"));
   render();
 });
 
 function matches(g){
+  if(state.hideDone && isDone(g.url)) return false;
   if(!state.tiers.has(g.tier)) return false;
   if(state.lang!=="all" && !g.langs.includes(state.lang)) return false;
   if(state.cat!=="all" && g.category!==state.cat) return false;
@@ -269,11 +306,15 @@ function rowHtml(g){
   const t = TIERS[g.tier];
   const langs = g.langs.map(l=>`<span class="lang">${esc(l)}</span>`).join("");
   const vid = g.video ? `<span class="vid">video</span>` : "";
-  return `<a class="row" href="${esc(g.url)}" target="_blank" rel="noopener"
+  const done = isDone(g.url);
+  const check = done ? `<span class="check" title="completed">✓</span>` : "";
+  const note = noteOf(g.url);
+  const noteEl = done && note ? `<span class="buildnote">${esc(note)}</span>` : "";
+  return `<a class="row${done?" is-done":""}" href="${esc(g.url)}" target="_blank" rel="noopener"
       style="--tc:${t.color};--tc-soft:${t.soft}">
       <div>
-        <div class="title">${esc(g.title)}</div>
-        <div class="rowmeta"><span class="cat">${esc(g.category)}</span>${langs}${vid}</div>
+        <div class="title">${check}${esc(g.title)}</div>
+        <div class="rowmeta"><span class="cat">${esc(g.category)}</span>${langs}${vid}${noteEl}</div>
       </div>
       <span class="badge">${t.label}</span>
     </a>`;
@@ -309,5 +350,31 @@ function render(){
   $("count").innerHTML = `Showing <b>${rows.length}</b> of ${GUIDES.length} guides`;
 }
 
+// ---- progress summary (static: reflects the baked-in PROGRESS, not filters) ----
+function renderProgress(){
+  const total = GUIDES.length;
+  const doneCount = GUIDES.filter(g=>isDone(g.url)).length;
+  const pct = total ? Math.round(doneCount/total*100) : 0;
+  const byTier = {};
+  TIER_ORDER.forEach(k=>byTier[k]={done:0,total:0});
+  GUIDES.forEach(g=>{ if(byTier[g.tier]){ byTier[g.tier].total++; if(isDone(g.url)) byTier[g.tier].done++; } });
+  let tiers = "";
+  TIER_ORDER.forEach(k=>{
+    const b = byTier[k]; if(!b.total) return;
+    const t = TIERS[k];
+    const p = Math.round(b.done/b.total*100);
+    tiers += `<div class="prog-tier" style="--tc:${t.color}">
+        <div class="lbl">${t.label}<b>${b.done}/${b.total}</b></div>
+        <div class="bar"><span style="width:${p}%"></span></div>
+      </div>`;
+  });
+  $("prog").innerHTML = `
+    <div class="prog-top"><h2>Your progress</h2>
+      <span class="pct"><b>${doneCount}</b> / ${total} guides · ${pct}%</span></div>
+    <div class="prog-overall"><span style="width:${pct}%"></span></div>
+    <div class="prog-tiers">${tiers}</div>`;
+}
+
+renderProgress();
 render();
 </script>

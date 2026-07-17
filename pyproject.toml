@@ -1,0 +1,190 @@
+[project]
+name = "byox_ladder"
+version = "1.0.0"
+description = "Build-Your-Own-X difficulty ladder + synced progress tracker"
+requires-python = ">=3.10"
+dependencies = [
+    # Shared cross-device sync layer (GitHub-Contents-API CRDT log). Pins the
+    # same release family diet_guard/screen-locker use.
+    "crdt-sync @ git+https://github.com/kuhyx/utils@crdt-sync-v0.3.0#subdirectory=crdt-sync",
+]
+
+[project.scripts]
+byox = "byox_ladder._cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["byox_ladder"]
+
+# ============================================================================
+# RUFF - Extremely fast Python linter and formatter
+# ============================================================================
+[tool.ruff]
+target-version = "py310"
+include = ["*.py", "**/*.py"]
+exclude = [".git", ".venv", "__pycache__", "build", "dist", ".eggs"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D203",   # conflicts with D211
+    "D213",   # conflicts with D212
+    "COM812", # formatter handles trailing commas
+    "ISC001", # formatter may create implicit concatenation
+    "S603",   # subprocess-without-shell false positives
+]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**/*.py" = ["ARG", "D", "PLC0415", "PLR2004", "S101", "SLF001"]
+"**/test_*.py" = ["ARG", "D", "PLC0415", "PLR2004", "S101", "SLF001"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+force-single-line = false
+force-sort-within-sections = true
+known-first-party = ["byox_ladder"]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "double"
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+
+# ============================================================================
+# MYPY - Static type checker (strict)
+# ============================================================================
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+disallow_any_unimported = false  # crdt_sync ships no stubs; treat as Any at the boundary
+disallow_any_explicit = false
+disallow_any_generics = true
+disallow_subclassing_any = true
+strict_equality = true
+extra_checks = true
+ignore_missing_imports = true
+show_error_codes = true
+color_output = true
+
+[[tool.mypy.overrides]]
+module = ["crdt_sync.*", "requests.*"]
+ignore_missing_imports = true
+
+# ============================================================================
+# PYLINT
+# ============================================================================
+[tool.pylint.main]
+# Make the repo root importable so `import byox_ladder` resolves under static
+# analysis (pylint runs from the repo root, pre-commit's working directory).
+init-hook = "import sys; sys.path[:0] = ['.']"
+analyse-fallback-blocks = true
+persistent = true
+jobs = 0
+py-version = "3.10"
+ignore = [".venv", "__pycache__", "tests", "conftest.py"]
+ignore-patterns = [".*\\.pyi$"]
+
+[tool.pylint.messages_control]
+enable = "all"
+disable = [
+    "use-implicit-booleaness-not-comparison",
+    "use-implicit-booleaness-not-comparison-to-string",
+    "use-implicit-booleaness-not-comparison-to-zero",
+    "consider-using-with",
+    "unnecessary-ellipsis",
+]
+
+[tool.pylint.design]
+min-public-methods = 0
+max-module-lines = 1000
+max-attributes = 12
+max-args = 6
+max-positional-arguments = 6
+max-locals = 20
+
+[tool.pylint.basic]
+method-rgx = "[a-z_][a-z0-9_]{2,}$|visit_[A-Za-z][A-Za-z0-9_]*"
+
+[tool.pylint.similarities]
+min-similarity-lines = 10
+
+[tool.pylint.spelling]
+spelling-dict = ""
+
+# ============================================================================
+# BANDIT
+# ============================================================================
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]
+
+# ============================================================================
+# PYTEST
+# ============================================================================
+[tool.pytest.ini_options]
+testpaths = ["byox_ladder/tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+    "--cov=byox_ladder",
+    "--cov-branch",
+    "--cov-report=term-missing",
+    "--cov-report=lcov",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+    "default::pytest.PytestUnraisableExceptionWarning",
+]
+
+# ============================================================================
+# COVERAGE
+# ============================================================================
+[tool.coverage.run]
+source = ["byox_ladder"]
+branch = true
+# __main__.py is a trivial `python -m byox_ladder` entry shim (no logic).
+omit = ["*/__pycache__/*", "*/tests/*", "*/.venv/*", "*/__main__.py"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "raise AssertionError",
+    "if TYPE_CHECKING:",
+    'if __name__ == "__main__":',
+]
+partial_branches = ["pragma: no branch"]

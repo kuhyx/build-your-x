@@ -1,0 +1,133 @@
+# ==============================================================================
+# Pre-commit Configuration - byox_ladder standalone repo
+# ==============================================================================
+# Install:  pre-commit install && pre-commit install --hook-type pre-push
+# ==============================================================================
+
+default_language_version:
+  python: python3
+
+default_stages: [pre-commit]
+fail_fast: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--unsafe]
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: [--maxkb=2000]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: detect-private-key
+      - id: debug-statements
+      - id: check-ast
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: requirements-txt-fixer
+
+  # NOQA BLOCKER - no suppression comments
+  - repo: local
+    hooks:
+      - id: no-noqa
+        name: Block noqa comments
+        entry: '(?i)#\s*(noqa|type:\s*ignore)'
+        language: pygrep
+        types: [python]
+      - id: no-ruff-noqa
+        name: Block ruff noqa file-level comments
+        entry: '(?i)#\s*ruff:\s*noqa'
+        language: pygrep
+        types: [python]
+
+  # RUFF
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.2
+    hooks:
+      - id: ruff
+        args: [--fix, --unsafe-fixes, --exit-non-zero-on-fix, --show-fixes]
+        types_or: [python, pyi]
+      - id: ruff-format
+        types_or: [python, pyi]
+
+  # MYPY
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        stages: [pre-commit]
+        # Same relaxed error set the monorepo uses so pytest's untyped
+        # fixtures/parametrize and test-only attribute access don't fail the
+        # gate; source modules still typecheck under the strict pyproject config.
+        args:
+          - --ignore-missing-imports
+          - --no-error-summary
+          - --disable-error-code=no-untyped-def
+          - --disable-error-code=no-untyped-call
+          - --disable-error-code=attr-defined
+          - --disable-error-code=return-value
+          - --disable-error-code=no-any-return
+          - --disable-error-code=misc
+        additional_dependencies: [types-requests]
+
+  # PYLINT
+  - repo: https://github.com/pylint-dev/pylint
+    rev: v3.3.2
+    hooks:
+      - id: pylint
+        stages: [pre-commit]
+        args: [--rcfile=pyproject.toml, --fail-under=10, --jobs=4]
+        additional_dependencies:
+          - pytest
+          - requests
+          - crdt-sync @ git+https://github.com/kuhyx/utils@crdt-sync-v0.3.0#subdirectory=crdt-sync
+        exclude: ^(\.venv/)|(^|/)(tests/|conftest\.py)
+
+  # BANDIT
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.10
+    hooks:
+      - id: bandit
+        stages: [pre-commit]
+        args: [-c, pyproject.toml, --severity-level=high, --confidence-level=medium, --skip=B113]
+        additional_dependencies: ["bandit[toml]"]
+        exclude: ^(\.venv/|tests/|.*test.*\.py$)
+
+  # PYTEST + COVERAGE (pre-push)
+  - repo: local
+    hooks:
+      - id: pytest-coverage
+        name: pytest with 100% coverage enforcement
+        entry: python -m pytest byox_ladder/tests/ --cov=byox_ladder --cov-branch --cov-fail-under=100
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-push]
+
+  # CODESPELL
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+      - id: codespell
+        args:
+          - --skip=*.json,*.lock,*-lock.yaml,*.min.js,*.min.css,.git,__pycache__,.venv,*.txt
+          - --ignore-words-list=als,ans,ect,nd,som,sur,te,nam,numer,crate,doubleclick,tabel,blok,bloc,proces,serwer,adres,metod,tekst
+        # guide-ladder.html inlines upstream build-your-own-x tutorial titles
+        # verbatim (third-party data, incl. real source typos) — not authored text.
+        exclude: ^byox_ladder/guide-ladder\.html$
+
+  # SHELLCHECK
+  - repo: local
+    hooks:
+      - id: shellcheck
+        name: shellcheck
+        entry: bash -c 'printf "%s\0" "$@" | xargs -0 -r -n 40 shellcheck --severity=warning' --
+        language: system
+        types: [shell]

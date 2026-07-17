@@ -18,14 +18,17 @@ import json
 import logging
 from pathlib import Path
 
+from byox_ladder._progress import PROGRESS_PATH, load_progress
+
 logger = logging.getLogger(__name__)
 
 HERE = Path(__file__).resolve().parent
 TEMPLATES = HERE / "templates"
 GUIDES_JSON = HERE / "guides.json"
 
-# Placeholder in the guide template that the inlined dataset replaces.
+# Placeholders in the guide template that the inlined datasets replace.
 MARKER = "/*__GUIDES__*/"
+PROGRESS_MARKER = "/*__PROGRESS__*/"
 
 # Minimal, valid document skeleton added around the published page content
 # (claude.ai injects an equivalent wrapper; local files need their own).
@@ -44,16 +47,39 @@ def standalone(content: str) -> str:
     return SKELETON_HEAD + content + SKELETON_TAIL
 
 
+def _progress_payload() -> dict[str, dict[str, object]]:
+    """Return ``{url: {done, note}}`` for every completed guide.
+
+    Reads the local (crdt_sync-backed) progress store. Only done guides are
+    inlined — the dashboard shows a note solely for completed guides, so
+    carrying not-done entries would just bloat the page.
+    """
+    progress = load_progress(PROGRESS_PATH)
+    return {
+        url: {"done": entry.done, "note": entry.note}
+        for url, entry in progress.items()
+        if entry.done
+    }
+
+
+def _inline(payload: object) -> str:
+    """Serialize ``payload`` compactly, guarding ``</`` from closing the script."""
+    return json.dumps(payload, separators=(",", ":")).replace("</", "<\\/")
+
+
 def build_guide_page() -> str:
-    """Inject ``guides.json`` into the guide template; return standalone HTML."""
+    """Inject guides + progress into the guide template; return standalone HTML."""
     guides = json.loads(GUIDES_JSON.read_text(encoding="utf-8"))
-    # Compact payload; guard any "</" so inline data can't close the script tag.
-    payload = json.dumps(guides, separators=(",", ":")).replace("</", "<\\/")
     template = (TEMPLATES / "guide.template.html").read_text(encoding="utf-8")
-    if MARKER not in template:
-        message = f"marker {MARKER!r} not found in guide template"
-        raise ValueError(message)
-    return standalone(template.replace(MARKER, f"const GUIDES = {payload};"))
+    for marker in (MARKER, PROGRESS_MARKER):
+        if marker not in template:
+            message = f"marker {marker!r} not found in guide template"
+            raise ValueError(message)
+    page = template.replace(MARKER, f"const GUIDES = {_inline(guides)};")
+    page = page.replace(
+        PROGRESS_MARKER, f"const PROGRESS = {_inline(_progress_payload())};"
+    )
+    return standalone(page)
 
 
 def build_category_page() -> str:

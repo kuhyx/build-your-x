@@ -1,0 +1,12 @@
+[Unit]
+Description=byox build-your-own-x progress sync (crdt_sync)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# PYTHONPATH lets the system interpreter import the package straight from the
+# checkout even if the editable install landed in a different interpreter's
+# site-packages (the failure mode the crdt-sync migration skill warns about).
+Environment=PYTHONPATH=%h/build_your_x
+ExecStart=/usr/bin/python -m byox_ladder sync
