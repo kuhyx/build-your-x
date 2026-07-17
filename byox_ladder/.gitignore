@@ -1,0 +1,4 @@
+# Fetched upstream README (third-party content — not vendored) and the derived
+# dataset. The built *-ladder.html pages ARE committed as the runnable output.
+byox-readme.md
+guides.json

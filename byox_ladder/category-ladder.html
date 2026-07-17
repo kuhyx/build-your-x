@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build Your Own X — Difficulty Ladder</title>
+<style>
+  /* ---- Tokens: light is the base, dark + explicit theme override below ---- */
+  :root{
+    --bg:#f4f6f9; --panel:#ffffff; --panel-2:#eef1f6; --border:#dde3ec;
+    --text:#1a2230; --muted:#5b6676; --faint:#8a94a3;
+    --accent:#0e7490; --accent-ink:#ffffff; --accent-soft:#0e749018;
+    --t1:#1a7f37; --t2:#1f6feb; --t3:#9a6700; --t4:#cf222e;
+    --t1-soft:#1a7f3718; --t2-soft:#1f6feb18; --t3-soft:#9a670018; --t4-soft:#cf222e18;
+    --shadow:0 1px 2px rgba(16,23,38,.06), 0 8px 24px rgba(16,23,38,.06);
+    --font-display:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --font-body:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0d1117; --panel:#161b22; --panel-2:#1c232d; --border:#2b333d;
+      --text:#c9d4e0; --muted:#8b96a5; --faint:#6b7684;
+      --accent:#38bdf8; --accent-ink:#05202b; --accent-soft:#38bdf815;
+      --t1:#3fb950; --t2:#58a6ff; --t3:#d29922; --t4:#f85149;
+      --t1-soft:#3fb95018; --t2-soft:#58a6ff18; --t3-soft:#d2992218; --t4-soft:#f8514918;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  /* Viewer toggle wins over the media query, in both directions */
+  :root[data-theme="light"]{
+    --bg:#f4f6f9; --panel:#ffffff; --panel-2:#eef1f6; --border:#dde3ec;
+    --text:#1a2230; --muted:#5b6676; --faint:#8a94a3;
+    --accent:#0e7490; --accent-ink:#ffffff; --accent-soft:#0e749018;
+    --t1:#1a7f37; --t2:#1f6feb; --t3:#9a6700; --t4:#cf222e;
+    --t1-soft:#1a7f3718; --t2-soft:#1f6feb18; --t3-soft:#9a670018; --t4-soft:#cf222e18;
+    --shadow:0 1px 2px rgba(16,23,38,.06), 0 8px 24px rgba(16,23,38,.06);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d1117; --panel:#161b22; --panel-2:#1c232d; --border:#2b333d;
+    --text:#c9d4e0; --muted:#8b96a5; --faint:#6b7684;
+    --accent:#38bdf8; --accent-ink:#05202b; --accent-soft:#38bdf815;
+    --t1:#3fb950; --t2:#58a6ff; --t3:#d29922; --t4:#f85149;
+    --t1-soft:#3fb95018; --t2-soft:#58a6ff18; --t3-soft:#d2992218; --t4-soft:#f8514918;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--font-body); line-height:1.55;
+    font-size:16px; letter-spacing:.01em;
+  }
+  a{color:inherit}
+
+  .wrap{max-width:1200px; margin:0 auto; padding:clamp(20px,4vw,44px) clamp(16px,4vw,40px) 64px}
+
+  /* ---- Header ---- */
+  header{margin-bottom:28px}
+  .eyebrow{
+    font-family:var(--font-display); font-size:.72rem; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--accent); margin:0 0 10px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:"//"; opacity:.55}
+  h1{
+    font-family:var(--font-display); font-weight:650;
+    font-size:clamp(1.9rem,5.4vw,3.1rem); line-height:1.02;
+    letter-spacing:-.01em; margin:0 0 14px; text-wrap:balance;
+  }
+  h1 .x{color:var(--accent)}
+  .lede{
+    max-width:60ch; color:var(--muted); font-size:1.02rem; margin:0 0 4px;
+  }
+  .lede a{color:var(--accent); text-underline-offset:3px}
+
+  /* ---- Scoring axes note ---- */
+  .axes{
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:20px;
+  }
+  .axis{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:10px 13px; flex:1 1 200px; box-shadow:var(--shadow);
+  }
+  .axis b{display:block; font-size:.82rem; font-family:var(--font-display); letter-spacing:.02em}
+  .axis span{font-size:.8rem; color:var(--muted)}
+
+  /* ---- Layout ---- */
+  .layout{display:grid; grid-template-columns:1fr; gap:26px; margin-top:30px}
+  @media (min-width:900px){ .layout{grid-template-columns:230px 1fr; gap:34px} }
+
+  aside{align-self:start}
+  @media (min-width:900px){ aside{position:sticky; top:22px} }
+
+  .ctl-group{margin-bottom:22px}
+  .ctl-label{
+    font-family:var(--font-display); font-size:.7rem; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--faint); margin:0 0 10px;
+  }
+  select{
+    width:100%; font-family:var(--font-body); font-size:.9rem; color:var(--text);
+    background:var(--panel); border:1px solid var(--border); border-radius:9px;
+    padding:9px 11px; cursor:pointer;
+  }
+  .chips{display:flex; flex-direction:column; gap:8px}
+  .chip{
+    display:flex; align-items:center; gap:9px; width:100%; cursor:pointer;
+    font-family:var(--font-body); font-size:.88rem; text-align:left;
+    background:var(--panel); color:var(--text);
+    border:1px solid var(--border); border-radius:9px; padding:8px 11px;
+    transition:background .15s, border-color .15s, opacity .15s;
+  }
+  .chip .dot{width:10px; height:10px; border-radius:3px; flex:none; background:var(--tc)}
+  .chip .n{margin-left:auto; font-family:var(--font-display); font-size:.78rem; color:var(--muted); font-variant-numeric:tabular-nums}
+  .chip[aria-pressed="false"]{opacity:.4; background:transparent}
+  .chip:hover{border-color:var(--tc)}
+  .chip:focus-visible, select:focus-visible, .reset:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .reset{
+    background:none; border:none; color:var(--accent); cursor:pointer;
+    font-family:var(--font-display); font-size:.76rem; letter-spacing:.04em;
+    padding:6px 0; margin-top:4px;
+  }
+  .count{
+    font-family:var(--font-display); font-size:.76rem; color:var(--faint);
+    letter-spacing:.04em; margin-top:16px;
+  }
+  .count b{color:var(--text)}
+
+  /* ---- Cards ---- */
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(255px,1fr)); gap:16px}
+  .card{
+    position:relative; background:var(--panel); border:1px solid var(--border);
+    border-left:4px solid var(--tc); border-radius:12px;
+    padding:16px 16px 15px; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; gap:9px; min-width:0;
+    transition:transform .16s ease, border-color .16s ease;
+  }
+  .card:hover{transform:translateY(-3px); border-color:var(--tc)}
+  .card-top{display:flex; align-items:baseline; gap:11px}
+  .rank{
+    font-family:var(--font-display); font-weight:650; font-size:1.15rem;
+    color:var(--tc); font-variant-numeric:tabular-nums; line-height:1;
+  }
+  .rank::before{content:"#"; opacity:.5; font-size:.85em}
+  .name{font-weight:650; font-size:1.04rem; letter-spacing:-.01em; line-height:1.2}
+  .badge{
+    margin-left:auto; align-self:center; font-family:var(--font-display);
+    font-size:.63rem; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--tc); background:var(--tc-soft); border:1px solid var(--tc);
+    border-radius:999px; padding:3px 8px; white-space:nowrap;
+  }
+  .why{font-size:.88rem; color:var(--muted); margin:0; flex:1}
+  .tags{display:flex; flex-wrap:wrap; gap:6px}
+  .tag{
+    font-family:var(--font-display); font-size:.68rem; color:var(--faint);
+    background:var(--panel-2); border-radius:6px; padding:3px 7px; white-space:nowrap;
+  }
+  .repo-link{
+    font-family:var(--font-display); font-size:.74rem; letter-spacing:.03em;
+    color:var(--accent); text-decoration:none; margin-top:2px;
+    display:inline-flex; align-items:center; gap:5px; align-self:flex-start;
+  }
+  .repo-link:hover{text-decoration:underline; text-underline-offset:3px}
+  .repo-link::after{content:"↗"; font-size:.85em}
+
+  @media (prefers-reduced-motion:no-preference){
+    .card{animation:pop .28s ease both}
+    @keyframes pop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+  }
+
+  footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--border);
+    font-size:.82rem; color:var(--faint)}
+  footer a{color:var(--accent)}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">codecrafters-io / build-your-own-x</p>
+    <h1>The Build-Your-Own-<span class="x">X</span> Difficulty Ladder</h1>
+    <p class="lede">All 30 project categories from the
+      <a href="https://github.com/codecrafters-io/build-your-own-x#table-of-contents" target="_blank" rel="noopener">build-your-own-x</a>
+      collection, ranked easiest&nbsp;→&nbsp;hardest and grouped into four tiers.
+      Sort or filter, then follow a card to its tutorials.</p>
+
+    <div class="axes" aria-label="How difficulty is scored">
+      <div class="axis"><b>Prerequisites</b><span>Domain knowledge a beginner must bring — crypto, linear algebra, OS internals.</span></div>
+      <div class="axis"><b>Scope</b><span>How much code a working toy version actually needs.</span></div>
+      <div class="axis"><b>Guidance</b><span>Whether a canonical step-by-step tutorial exists to lean on.</span></div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <div class="ctl-group">
+        <p class="ctl-label">Sort</p>
+        <select id="sort" aria-label="Sort order">
+          <option value="rank">Difficulty (easy → hard)</option>
+          <option value="rankdesc">Difficulty (hard → easy)</option>
+          <option value="az">Name (A → Z)</option>
+        </select>
+      </div>
+      <div class="ctl-group">
+        <p class="ctl-label">Tiers</p>
+        <div class="chips" id="chips"></div>
+        <button class="reset" id="reset" type="button">reset filters</button>
+      </div>
+      <p class="count" id="count"></p>
+    </aside>
+
+    <main>
+      <div class="grid" id="grid"></div>
+    </main>
+  </div>
+
+  <footer>
+    Difficulty is a judgment call, scored on prerequisites × scope × guidance for the
+    <em>typical</em> tutorial in each section — not the hardest possible reading. Data mirrors the
+    <a href="https://github.com/codecrafters-io/build-your-own-x" target="_blank" rel="noopener">build-your-own-x</a> README.
+  </footer>
+</div>
+
+<script>
+  // Tier metadata: order carries difficulty, color encodes it (green -> red).
+  const TIERS = {
+    beginner:     {label:"Beginner",     color:"var(--t1)", soft:"var(--t1-soft)"},
+    intermediate: {label:"Intermediate", color:"var(--t2)", soft:"var(--t2-soft)"},
+    advanced:     {label:"Advanced",     color:"var(--t3)", soft:"var(--t3-soft)"},
+    expert:       {label:"Expert",       color:"var(--t4)", soft:"var(--t4-soft)"},
+  };
+
+  // GitHub slug rule: lowercase, strip backticks/punctuation, spaces -> hyphens.
+  const anchor = s => "https://github.com/codecrafters-io/build-your-own-x#build-your-own-" + s;
+
+  const DATA = [
+    {r:1, name:"Command-Line Tool", tier:"beginner", slug:"command-line-tool",
+     why:"Parse arguments, do one job. The least scaffolding of anything here.", tags:["Any language","argv","stdin/stdout"]},
+    {r:2, name:"Bot", tier:"beginner", slug:"bot",
+     why:"Mostly glue: call an API, handle events, respond. Little novel machinery.", tags:["HTTP APIs","Webhooks","Event loop"]},
+    {r:3, name:"Template Engine", tier:"beginner", slug:"template-engine",
+     why:"Scan a string, substitute placeholders, handle loops. Small and self-contained.", tags:["String parsing","Tokenizing"]},
+    {r:4, name:"Text Editor", tier:"beginner", slug:"text-editor",
+     why:"Raw terminal mode and a screen buffer — the classic ~1k-line kilo build is heavily guided.", tags:["termios","Terminal I/O","C"]},
+    {r:5, name:"Git", tier:"beginner", slug:"git",
+     why:"A content-addressable object store: blobs, trees, commits, SHA-1. Simple model, big payoff.", tags:["Hashing","zlib","File formats"]},
+
+    {r:6, name:"Shell", tier:"intermediate", slug:"shell",
+     why:"fork/exec, pipes and redirection, basic job control — real OS-process work, but bounded.", tags:["fork/exec","Pipes","POSIX"]},
+    {r:7, name:"Web Server", tier:"intermediate", slug:"web-server",
+     why:"Open a socket, parse HTTP, route requests. Concurrency is where it gets spicy.", tags:["Sockets","HTTP","Concurrency"]},
+    {r:8, name:"Search Engine", tier:"intermediate", slug:"search-engine",
+     why:"Build an inverted index and rank with tf-idf. Data-structure heavy, math-light.", tags:["Inverted index","tf-idf","Tokenizing"]},
+    {r:9, name:"BitTorrent Client", tier:"intermediate", slug:"bittorrent-client",
+     why:"Bencode parsing plus the tracker and peer wire protocols — a real network protocol to implement.", tags:["Bencode","TCP","Protocol"]},
+    {r:10, name:"Front-end Framework / Library", tier:"intermediate", slug:"front-end-framework--library",
+     why:"A virtual DOM, diffing, and a reactivity system. Conceptually tidy, JS-detail heavy.", tags:["Virtual DOM","Diffing","Reactivity"]},
+    {r:11, name:"Regex Engine", tier:"intermediate", slug:"regex-engine",
+     why:"Compile patterns to an NFA/DFA (Thompson construction) and simulate it. Clean but algorithmic.", tags:["NFA/DFA","Automata","Parsing"]},
+    {r:12, name:"Game", tier:"intermediate", slug:"game",
+     why:"Guided clones (snake, tetris, a minecraft-lite) are approachable; scope swings wide by target.", tags:["Game loop","Rendering","Input"]},
+
+    {r:13, name:"Programming Language", tier:"advanced", slug:"programming-language",
+     why:"Lexer → parser → tree-walk interpreter. Big, but Crafting Interpreters holds your hand well.", tags:["Lexing","Parsing","Interpreter"]},
+    {r:14, name:"Emulator / Virtual Machine", tier:"advanced", slug:"emulator--virtual-machine",
+     why:"CHIP-8 is a weekend; an NES/GB emulator is months. Ranked at the typical middle.", tags:["Opcodes","CPU cycles","Bit-ops"]},
+    {r:15, name:"Neural Network", tier:"advanced", slug:"neural-network",
+     why:"Forward pass, backprop by hand, gradient descent on MNIST. The calculus is the wall.", tags:["Backprop","Linear algebra","Calculus"]},
+    {r:16, name:"Memory Allocator", tier:"advanced", slug:"memory-allocator",
+     why:"Implement malloc/free with free lists over sbrk/mmap. Small code, unforgiving pointer work.", tags:["Pointers","sbrk/mmap","C"]},
+    {r:17, name:"Blockchain / Cryptocurrency", tier:"advanced", slug:"blockchain--cryptocurrency",
+     why:"Hashing and signatures, a consensus rule, and P2P gossip all have to click together.", tags:["Crypto","Consensus","P2P"]},
+    {r:18, name:"Database", tier:"advanced", slug:"database",
+     why:"A storage engine (B-trees), a write-ahead log, and a query layer. Broad and deep.", tags:["B-trees","WAL","Query parsing"]},
+    {r:19, name:"3D Renderer", tier:"advanced", slug:"3d-renderer",
+     why:"Rasterization or ray tracing built on solid linear algebra and a graphics pipeline.", tags:["Linear algebra","Rasterizing","Shading"]},
+    {r:20, name:"Physics Engine", tier:"advanced", slug:"physics-engine",
+     why:"Collision detection plus stable numerical integration — subtle math bugs everywhere.", tags:["Collision","Integration","Vectors"]},
+    {r:21, name:"Docker", tier:"advanced", slug:"docker",
+     why:"Little code, deep Linux: namespaces, cgroups and an overlay filesystem to isolate a process.", tags:["Namespaces","cgroups","Linux"]},
+    {r:22, name:"Voxel Engine", tier:"advanced", slug:"voxel-engine",
+     why:"3D graphics plus chunk streaming and greedy meshing to keep a blocky world fast.", tags:["Meshing","Chunking","GPU"]},
+
+    {r:23, name:"Network Stack", tier:"expert", slug:"network-stack",
+     why:"A working TCP/IP: the full connection state machine, retransmission and congestion control.", tags:["TCP/IP","State machine","Kernel"]},
+    {r:24, name:"AI Model", tier:"expert", slug:"ai-model",
+     why:"Train a transformer/LLM from scratch. The architecture is only half — the training loop is the rest.", tags:["Transformers","Training","GPUs"]},
+    {r:25, name:"Visual Recognition System", tier:"expert", slug:"visual-recognition-system",
+     why:"A full computer-vision + ML pipeline from pixels to predictions.", tags:["CV","CNNs","Feature extraction"]},
+    {r:26, name:"Augmented Reality", tier:"expert", slug:"augmented-reality",
+     why:"Fuse real-time computer vision with 3D graphics — tracking, calibration, and rendering at once.", tags:["CV","3D math","Real-time"]},
+    {r:27, name:"Web Browser", tier:"expert", slug:"web-browser",
+     why:"Parse HTML/CSS, run layout, paint, and drive a JS engine. Enormous surface area.", tags:["Parsing","Layout","JS engine"]},
+    {r:28, name:"Processor", tier:"expert", slug:"processor",
+     why:"Design a CPU in an HDL from logic gates up — this one crosses into hardware.", tags:["Digital logic","HDL","Architecture"]},
+    {r:29, name:"Operating System", tier:"expert", slug:"operating-system",
+     why:"Bootloader, kernel, memory management, a scheduler. The canonical hardest build.", tags:["Kernel","Bootloader","Scheduling"]},
+    {r:30, name:"Distributed Systems", tier:"expert", slug:"distributed-systems",
+     why:"Consensus (Raft/Paxos), replication and fault tolerance — the hardest to reason about correctly.", tags:["Consensus","Replication","Fault tolerance"]},
+  ];
+
+  const grid = document.getElementById("grid");
+  const chipsEl = document.getElementById("chips");
+  const countEl = document.getElementById("count");
+  const sortEl = document.getElementById("sort");
+
+  // active tiers as a Set; all on by default
+  const active = new Set(Object.keys(TIERS));
+
+  // Build filter chips with per-tier counts
+  Object.entries(TIERS).forEach(([key, t]) => {
+    const n = DATA.filter(d => d.tier === key).length;
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.dataset.tier = key;
+    b.setAttribute("aria-pressed", "true");
+    b.style.setProperty("--tc", t.color);
+    b.innerHTML = `<span class="dot"></span>${t.label}<span class="n">${n}</span>`;
+    b.addEventListener("click", () => {
+      active.has(key) ? active.delete(key) : active.add(key);
+      b.setAttribute("aria-pressed", active.has(key));
+      render();
+    });
+    chipsEl.appendChild(b);
+  });
+
+  document.getElementById("reset").addEventListener("click", () => {
+    active.clear(); Object.keys(TIERS).forEach(k => active.add(k));
+    chipsEl.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed","true"));
+    sortEl.value = "rank"; render();
+  });
+  sortEl.addEventListener("change", render);
+
+  function render(){
+    const mode = sortEl.value;
+    let rows = DATA.filter(d => active.has(d.tier));
+    if (mode === "az")        rows = rows.slice().sort((a,b)=> a.name.localeCompare(b.name));
+    else if (mode === "rankdesc") rows = rows.slice().sort((a,b)=> b.r - a.r);
+    else                      rows = rows.slice().sort((a,b)=> a.r - b.r);
+
+    grid.innerHTML = "";
+    rows.forEach(d => {
+      const t = TIERS[d.tier];
+      const el = document.createElement("article");
+      el.className = "card";
+      el.style.setProperty("--tc", t.color);
+      el.style.setProperty("--tc-soft", t.soft);
+      el.innerHTML = `
+        <div class="card-top">
+          <span class="rank">${d.r}</span>
+          <span class="name">${d.name}</span>
+          <span class="badge">${t.label}</span>
+        </div>
+        <p class="why">${d.why}</p>
+        <div class="tags">${d.tags.map(x=>`<span class="tag">${x}</span>`).join("")}</div>
+        <a class="repo-link" href="${anchor(d.slug)}" target="_blank" rel="noopener">tutorials</a>`;
+      grid.appendChild(el);
+    });
+
+    countEl.innerHTML = `Showing <b>${rows.length}</b> of ${DATA.length} categories`;
+  }
+
+  render();
+</script>
+
+</html>

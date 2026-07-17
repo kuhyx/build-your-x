@@ -1,0 +1,313 @@
+<title>Build Your Own X — Guide Ladder</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --panel:#ffffff; --panel-2:#eef1f6; --border:#dde3ec;
+    --text:#1a2230; --muted:#5b6676; --faint:#8a94a3;
+    --accent:#0e7490; --accent-ink:#ffffff; --accent-soft:#0e749014;
+    --t1:#1a7f37; --t2:#1f6feb; --t3:#9a6700; --t4:#cf222e; --t5:#7a8698;
+    --t1-soft:#1a7f3714; --t2-soft:#1f6feb14; --t3-soft:#9a670014; --t4-soft:#cf222e14; --t5-soft:#7a869814;
+    --shadow:0 1px 2px rgba(16,23,38,.05), 0 8px 24px rgba(16,23,38,.05);
+    --font-display:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --font-body:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0d1117; --panel:#161b22; --panel-2:#1c232d; --border:#2b333d;
+      --text:#c9d4e0; --muted:#8b96a5; --faint:#6b7684;
+      --accent:#38bdf8; --accent-ink:#05202b; --accent-soft:#38bdf814;
+      --t1:#3fb950; --t2:#58a6ff; --t3:#d29922; --t4:#f85149; --t5:#8b96a5;
+      --t1-soft:#3fb95016; --t2-soft:#58a6ff16; --t3-soft:#d2992216; --t4-soft:#f8514916; --t5-soft:#8b96a516;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f6f9; --panel:#ffffff; --panel-2:#eef1f6; --border:#dde3ec;
+    --text:#1a2230; --muted:#5b6676; --faint:#8a94a3;
+    --accent:#0e7490; --accent-ink:#ffffff; --accent-soft:#0e749014;
+    --t1:#1a7f37; --t2:#1f6feb; --t3:#9a6700; --t4:#cf222e; --t5:#7a8698;
+    --t1-soft:#1a7f3714; --t2-soft:#1f6feb14; --t3-soft:#9a670014; --t4-soft:#cf222e14; --t5-soft:#7a869814;
+    --shadow:0 1px 2px rgba(16,23,38,.05), 0 8px 24px rgba(16,23,38,.05);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d1117; --panel:#161b22; --panel-2:#1c232d; --border:#2b333d;
+    --text:#c9d4e0; --muted:#8b96a5; --faint:#6b7684;
+    --accent:#38bdf8; --accent-ink:#05202b; --accent-soft:#38bdf814;
+    --t1:#3fb950; --t2:#58a6ff; --t3:#d29922; --t4:#f85149; --t5:#8b96a5;
+    --t1-soft:#3fb95016; --t2-soft:#58a6ff16; --t3-soft:#d2992216; --t4-soft:#f8514916; --t5-soft:#8b96a516;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.3);
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body);
+    line-height:1.5; font-size:15.5px; letter-spacing:.01em}
+  a{color:inherit; text-decoration:none}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:clamp(20px,4vw,40px) clamp(14px,4vw,36px) 60px}
+
+  /* header */
+  .eyebrow{font-family:var(--font-display); font-size:.7rem; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--accent); margin:0 0 9px; display:flex; align-items:center; gap:9px}
+  .eyebrow::before{content:"//"; opacity:.55}
+  h1{font-family:var(--font-display); font-weight:650; font-size:clamp(1.7rem,4.6vw,2.7rem);
+    line-height:1.04; letter-spacing:-.01em; margin:0 0 12px; text-wrap:balance}
+  h1 .x{color:var(--accent)}
+  .lede{max-width:64ch; color:var(--muted); font-size:1rem; margin:0}
+  .lede a{color:var(--accent); text-underline-offset:3px; text-decoration:underline}
+  .note{margin-top:14px; font-size:.86rem; color:var(--faint); max-width:70ch}
+  .note b{color:var(--muted); font-weight:600}
+
+  /* layout */
+  .layout{display:grid; grid-template-columns:1fr; gap:22px; margin-top:26px}
+  @media (min-width:860px){ .layout{grid-template-columns:250px 1fr; gap:30px} }
+  aside{align-self:start}
+  @media (min-width:860px){ aside{position:sticky; top:18px; max-height:calc(100vh - 34px); overflow-y:auto} }
+
+  .ctl{margin-bottom:18px}
+  .ctl-label{font-family:var(--font-display); font-size:.68rem; letter-spacing:.15em;
+    text-transform:uppercase; color:var(--faint); margin:0 0 8px}
+  .field{width:100%; font-family:var(--font-body); font-size:.88rem; color:var(--text);
+    background:var(--panel); border:1px solid var(--border); border-radius:9px; padding:9px 11px}
+  select.field{cursor:pointer}
+  input.field::placeholder{color:var(--faint)}
+
+  .chips{display:flex; flex-direction:column; gap:7px}
+  .chip{display:flex; align-items:center; gap:9px; width:100%; cursor:pointer;
+    font-family:var(--font-body); font-size:.85rem; text-align:left; color:var(--text);
+    background:var(--panel); border:1px solid var(--border); border-radius:9px; padding:7px 10px;
+    transition:background .15s, border-color .15s, opacity .15s}
+  .chip .dot{width:9px; height:9px; border-radius:3px; flex:none; background:var(--tc)}
+  .chip .n{margin-left:auto; font-family:var(--font-display); font-size:.74rem; color:var(--muted);
+    font-variant-numeric:tabular-nums}
+  .chip[aria-pressed="false"]{opacity:.4; background:transparent}
+  .chip:hover{border-color:var(--tc)}
+  .chip:focus-visible,.field:focus-visible,.reset:focus-visible,.row:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px}
+  .reset{background:none; border:none; color:var(--accent); cursor:pointer;
+    font-family:var(--font-display); font-size:.74rem; letter-spacing:.04em; padding:5px 0}
+  .count{font-family:var(--font-display); font-size:.75rem; color:var(--faint);
+    letter-spacing:.03em; margin-top:6px}
+  .count b{color:var(--text)}
+
+  /* list */
+  main{min-width:0}
+  .tierhead{display:flex; align-items:center; gap:11px; margin:22px 0 10px; padding-top:4px}
+  .tierhead:first-child{margin-top:0}
+  .tierhead .bar{width:26px; height:4px; border-radius:2px; background:var(--tc)}
+  .tierhead h2{font-family:var(--font-display); font-size:.9rem; letter-spacing:.06em;
+    text-transform:uppercase; margin:0; color:var(--tc)}
+  .tierhead .sub{font-size:.78rem; color:var(--faint); margin-left:auto; font-family:var(--font-display)}
+
+  .list{display:flex; flex-direction:column; gap:7px}
+  .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px 14px;
+    background:var(--panel); border:1px solid var(--border); border-left:4px solid var(--tc);
+    border-radius:10px; padding:11px 14px; box-shadow:var(--shadow);
+    transition:transform .12s ease, border-color .12s ease}
+  .row:hover{transform:translateX(2px); border-color:var(--tc)}
+  .row .title{font-weight:600; font-size:.96rem; line-height:1.3}
+  .row:hover .title{color:var(--accent)}
+  .rowmeta{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:5px}
+  .cat{font-family:var(--font-display); font-size:.7rem; color:var(--muted)}
+  .cat::after{content:"·"; margin-left:6px; color:var(--faint)}
+  .lang{font-family:var(--font-display); font-size:.68rem; color:var(--faint);
+    background:var(--panel-2); border-radius:5px; padding:2px 6px; white-space:nowrap}
+  .vid{font-family:var(--font-display); font-size:.64rem; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--accent); border:1px solid var(--accent); border-radius:5px; padding:1px 5px}
+  .badge{font-family:var(--font-display); font-size:.62rem; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--tc); background:var(--tc-soft); border:1px solid var(--tc); border-radius:999px;
+    padding:3px 8px; white-space:nowrap; align-self:center}
+
+  .empty{color:var(--muted); font-size:.92rem; padding:26px 4px}
+
+  footer{margin-top:34px; padding-top:16px; border-top:1px solid var(--border);
+    font-size:.8rem; color:var(--faint); max-width:74ch}
+  footer a{color:var(--accent)}
+
+  @media (prefers-reduced-motion:reduce){ .row{transition:none} }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">codecrafters-io / build-your-own-x</p>
+    <h1>The Build-Your-Own-<span class="x">X</span> Guide Ladder</h1>
+    <p class="lede">Every individual tutorial from the
+      <a href="https://github.com/codecrafters-io/build-your-own-x" target="_blank" rel="noopener">build-your-own-x</a>
+      collection — <span id="total">0</span> guides across 30 categories — placed on a difficulty
+      ladder. Search, filter by tier / language / category, and click any guide to open it.</p>
+    <p class="note"><b>How difficulty is assigned:</b> each guide inherits its category's tier
+      (a Regex-Engine guide is easier than an OS guide, whatever the language). Language only nudges
+      the order <i>within</i> a tier — lower-level languages (C, Rust, Asm) sit a little higher than
+      Python or JS. The <b>Unsorted</b> group is the repo's own uncategorized bucket; its guides span
+      all levels, so they aren't ranked.</p>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <div class="ctl">
+        <p class="ctl-label">Search</p>
+        <input id="q" class="field" type="search" placeholder="title, category, language…" autocomplete="off">
+      </div>
+      <div class="ctl">
+        <p class="ctl-label">Sort</p>
+        <select id="sort" class="field" aria-label="Sort order">
+          <option value="easy">Difficulty (easy → hard)</option>
+          <option value="hard">Difficulty (hard → easy)</option>
+          <option value="az">Title (A → Z)</option>
+        </select>
+      </div>
+      <div class="ctl">
+        <p class="ctl-label">Tiers</p>
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="ctl">
+        <p class="ctl-label">Language</p>
+        <select id="lang" class="field" aria-label="Filter by language"></select>
+      </div>
+      <div class="ctl">
+        <p class="ctl-label">Category</p>
+        <select id="cat" class="field" aria-label="Filter by category"></select>
+      </div>
+      <button class="reset" id="reset" type="button">reset all filters</button>
+      <p class="count" id="count"></p>
+    </aside>
+
+    <main id="main"></main>
+  </div>
+
+  <footer>
+    A per-guide expansion of the category difficulty ladder. Difficulty is a judgment call scored on
+    category × language; the exact head-to-head order within a tier is approximate by design. Data
+    mirrors the <a href="https://github.com/codecrafters-io/build-your-own-x" target="_blank" rel="noopener">build-your-own-x</a> README.
+  </footer>
+</div>
+
+<script>
+/*__GUIDES__*/
+
+const TIERS = {
+  beginner:     {label:"Beginner",     color:"var(--t1)", soft:"var(--t1-soft)", blurb:"app-level logic, few prerequisites"},
+  intermediate: {label:"Intermediate", color:"var(--t2)", soft:"var(--t2-soft)", blurb:"data structures, networking, a real protocol"},
+  advanced:     {label:"Advanced",     color:"var(--t3)", soft:"var(--t3-soft)", blurb:"deep domain knowledge or large scope"},
+  expert:       {label:"Expert",       color:"var(--t4)", soft:"var(--t4-soft)", blurb:"broad + deep, little hand-holding"},
+  unsorted:     {label:"Unsorted",     color:"var(--t5)", soft:"var(--t5-soft)", blurb:"repo's uncategorized bucket — spans all levels"},
+};
+const TIER_ORDER = ["beginner","intermediate","advanced","expert","unsorted"];
+
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+document.getElementById("total").textContent = GUIDES.length;
+
+const state = {
+  q:"", sort:"easy", lang:"all", cat:"all",
+  tiers:new Set(TIER_ORDER),
+};
+
+// ---- build tier chips with counts ----
+const chipsEl = $("chips");
+TIER_ORDER.forEach(key=>{
+  const t = TIERS[key];
+  const n = GUIDES.filter(g=>g.tier===key).length;
+  const b = document.createElement("button");
+  b.type="button"; b.className="chip"; b.dataset.tier=key;
+  b.setAttribute("aria-pressed","true");
+  b.style.setProperty("--tc", t.color);
+  b.innerHTML = `<span class="dot"></span>${t.label}<span class="n">${n}</span>`;
+  b.addEventListener("click", ()=>{
+    state.tiers.has(key) ? state.tiers.delete(key) : state.tiers.add(key);
+    b.setAttribute("aria-pressed", state.tiers.has(key));
+    render();
+  });
+  chipsEl.appendChild(b);
+});
+
+// ---- language select (alpha, with counts) ----
+const langCount = {};
+GUIDES.forEach(g=>g.langs.forEach(l=>langCount[l]=(langCount[l]||0)+1));
+const langEl = $("lang");
+langEl.appendChild(new Option(`All languages (${GUIDES.length})`, "all"));
+Object.keys(langCount).sort((a,b)=>a.localeCompare(b)).forEach(l=>{
+  langEl.appendChild(new Option(`${l} (${langCount[l]})`, l));
+});
+
+// ---- category select (in difficulty order) ----
+const catMeta = {};
+GUIDES.forEach(g=>{ if(!catMeta[g.category]) catMeta[g.category]={rank:g.cat_rank,n:0}; catMeta[g.category].n++; });
+const catEl = $("cat");
+catEl.appendChild(new Option(`All categories (30)`, "all"));
+Object.keys(catMeta).sort((a,b)=>catMeta[a].rank-catMeta[b].rank).forEach(c=>{
+  catEl.appendChild(new Option(`${c} (${catMeta[c].n})`, c));
+});
+
+// ---- wiring ----
+let t=null;
+$("q").addEventListener("input", e=>{ state.q=e.target.value.toLowerCase().trim();
+  clearTimeout(t); t=setTimeout(render,110); });
+$("sort").addEventListener("change", e=>{ state.sort=e.target.value; render(); });
+$("lang").addEventListener("change", e=>{ state.lang=e.target.value; render(); });
+$("cat").addEventListener("change", e=>{ state.cat=e.target.value; render(); });
+$("reset").addEventListener("click", ()=>{
+  state.q=""; state.sort="easy"; state.lang="all"; state.cat="all";
+  state.tiers=new Set(TIER_ORDER);
+  $("q").value=""; $("sort").value="easy"; $("lang").value="all"; $("cat").value="all";
+  chipsEl.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed","true"));
+  render();
+});
+
+function matches(g){
+  if(!state.tiers.has(g.tier)) return false;
+  if(state.lang!=="all" && !g.langs.includes(state.lang)) return false;
+  if(state.cat!=="all" && g.category!==state.cat) return false;
+  if(state.q){
+    const hay = (g.title+" "+g.category+" "+g.langs.join(" ")).toLowerCase();
+    if(!hay.includes(state.q)) return false;
+  }
+  return true;
+}
+
+function rowHtml(g){
+  const t = TIERS[g.tier];
+  const langs = g.langs.map(l=>`<span class="lang">${esc(l)}</span>`).join("");
+  const vid = g.video ? `<span class="vid">video</span>` : "";
+  return `<a class="row" href="${esc(g.url)}" target="_blank" rel="noopener"
+      style="--tc:${t.color};--tc-soft:${t.soft}">
+      <div>
+        <div class="title">${esc(g.title)}</div>
+        <div class="rowmeta"><span class="cat">${esc(g.category)}</span>${langs}${vid}</div>
+      </div>
+      <span class="badge">${t.label}</span>
+    </a>`;
+}
+
+function render(){
+  let rows = GUIDES.filter(matches);
+  if(state.sort==="az")        rows.sort((a,b)=>a.title.toLowerCase().localeCompare(b.title.toLowerCase()));
+  else if(state.sort==="hard") rows.sort((a,b)=>b.score-a.score || a.title.localeCompare(b.title));
+  else                         rows.sort((a,b)=>a.score-b.score || a.title.localeCompare(b.title));
+
+  const main = $("main");
+  if(!rows.length){ main.innerHTML = `<p class="empty">No guides match these filters. Try widening them or hit <em>reset</em>.</p>`;
+    $("count").innerHTML = `Showing <b>0</b> of ${GUIDES.length} guides`; return; }
+
+  const grouped = state.sort!=="az";
+  let html = "";
+  if(grouped){
+    // score sort keeps tiers contiguous, so walk runs of the same tier
+    for(let i=0; i<rows.length; ){
+      const tier = rows[i].tier, t = TIERS[tier];
+      const items = [];
+      while(i<rows.length && rows[i].tier===tier){ items.push(rows[i]); i++; }
+      html += `<div class="tierhead" style="--tc:${t.color}">
+          <span class="bar"></span><h2>${t.label}</h2>
+          <span class="sub">${items.length} guide${items.length!==1?"s":""} · ${t.blurb}</span></div>`;
+      html += `<div class="list">${items.map(rowHtml).join("")}</div>`;
+    }
+  } else {
+    html = `<div class="list">${rows.map(rowHtml).join("")}</div>`;
+  }
+  main.innerHTML = html;
+  $("count").innerHTML = `Showing <b>${rows.length}</b> of ${GUIDES.length} guides`;
+}
+
+render();
+</script>
