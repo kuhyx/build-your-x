@@ -86,7 +86,7 @@ repos:
         additional_dependencies:
           - pytest
           - requests
-          - crdt-sync @ git+https://github.com/kuhyx/utils@crdt-sync-v0.3.0#subdirectory=crdt-sync
+          - crdt-sync @ git+https://github.com/kuhyx/utils@crdt-sync-v0.5.1#subdirectory=crdt-sync
         exclude: ^(\.venv/)|(^|/)(tests/|conftest\.py)
 
   # BANDIT

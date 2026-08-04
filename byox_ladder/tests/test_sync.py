@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 import socket
 from typing import TYPE_CHECKING
 
-from crdt_sync import GitHubSyncError, Hlc, Record
+from crdt_sync import ConfigError, GitHubSyncError, Hlc, Record
 
 from byox_ladder import _sync
 from byox_ladder._progress import ProgressEntry, load_progress
 from byox_ladder._sync import (
     _decode,
     _encode,
+    _remote_client,
     device_id,
     log_to_progress,
     progress_to_log,
@@ -20,8 +22,6 @@ from byox_ladder._sync import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     import pytest
 
 
@@ -125,3 +125,48 @@ def test_run_sync_error_is_caught(
     outcome = run_sync(progress_path=tmp_path / "p.json", token_file=_token(tmp_path))
     assert outcome.status == "error"
     assert outcome.detail == "nope"
+
+
+def test_remote_client_stays_on_github_without_firebase_config(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unconfigured machine must not reach the network at all."""
+    monkeypatch.setattr(_sync, "CONFIG_FILE", Path("/nonexistent/firebase.json"))
+    github = object()
+
+    assert _remote_client(github) is github
+
+
+def test_remote_client_mirrors_to_github_when_configured(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Configured: Firebase is primary, GitHub keeps receiving the writes."""
+    config = tmp_path / "firebase.json"
+    config.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(_sync, "CONFIG_FILE", config)
+    github = object()
+    monkeypatch.setattr(
+        _sync,
+        "mirror_client_for",
+        lambda _app, client: ("mirror", client),
+    )
+
+    assert _remote_client(github) == ("mirror", github)
+
+
+def test_remote_client_falls_back_when_firebase_is_unusable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A broken Firebase must degrade to GitHub, never fail the tick."""
+    config = tmp_path / "firebase.json"
+    config.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(_sync, "CONFIG_FILE", config)
+    github = object()
+
+    def _boom(*_args: object, **_kwargs: object) -> None:
+        message = "no password"
+        raise ConfigError(message)
+
+    monkeypatch.setattr(_sync, "mirror_client_for", _boom)
+
+    assert _remote_client(github) is github

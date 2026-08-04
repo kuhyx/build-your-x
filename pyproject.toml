@@ -6,7 +6,7 @@ requires-python = ">=3.10"
 dependencies = [
     # Shared cross-device sync layer (GitHub-Contents-API CRDT log). Pins the
     # same release family diet_guard/screen-locker use.
-    "crdt-sync @ git+https://github.com/kuhyx/utils@crdt-sync-v0.3.0#subdirectory=crdt-sync",
+    "crdt-sync @ git+https://github.com/kuhyx/utils@crdt-sync-v0.5.1#subdirectory=crdt-sync",
 ]
 
 [project.scripts]

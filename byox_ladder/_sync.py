@@ -22,7 +22,20 @@ from pathlib import Path
 import socket
 from typing import Any, Literal
 
-from crdt_sync import GitHubSyncClient, GitHubSyncError, Hlc, Record, sync_log
+from crdt_sync import (
+    CONFIG_FILE,
+    ConfigError,
+    FileSyncStateStore,
+    FirebaseAuthError,
+    GitHubSyncClient,
+    GitHubSyncError,
+    Hlc,
+    Record,
+    RemoteStore,
+    RemoteSyncError,
+    mirror_client_for,
+    sync_log,
+)
 
 from byox_ladder._progress import (
     PROGRESS_PATH,
@@ -43,6 +56,36 @@ SYNC_TIMEOUT_SECONDS = 10.0
 
 # Fine-grained GitHub PAT (contents read/write on the sync repo), mode 600.
 SYNC_TOKEN_FILE = Path.home() / ".config" / "byox_ladder" / "sync_token"
+
+# Revision cache. Lives beside the progress file it describes and must be
+# cleared with it: skipping an unchanged peer is only sound because that
+# peer's records are already merged into the local log, so state that outlived
+# its log would skip peers whose data had been lost.
+SYNC_STATE_FILE = PROGRESS_PATH.parent / "sync_state.json"
+
+
+def _remote_client(github: GitHubSyncClient) -> RemoteStore:
+    """Return the backend to sync against.
+
+    Firebase when ``~/.config/crdt-sync/`` is set up, with GitHub kept as a
+    mirror so a device that has not moved yet still converges; GitHub alone
+    otherwise. An unconfigured Firebase is a normal state during the cutover,
+    not an error -- this machine keeps syncing exactly as it did before.
+
+    Rolling back is deleting this function and passing ``github`` straight
+    through: no data moves either way.
+    """
+    # Checked before constructing anything, so an unconfigured machine never
+    # reaches the network. Without this a test suite that blocks real sockets
+    # fails here rather than in the code under test, and an offline desktop
+    # pays a doomed sign-in attempt on every tick.
+    if not CONFIG_FILE.is_file():
+        return github
+    try:
+        return mirror_client_for("byox_ladder", github)
+    except (ConfigError, FirebaseAuthError, RemoteSyncError) as exc:
+        logger.info("Firebase unavailable, syncing via GitHub only: %s", exc)
+        return github
 
 
 @dataclass
@@ -174,19 +217,24 @@ def run_sync(
     node = device_id()
     local = load_progress(progress_path)
     local_log = progress_to_log(local, node)
-    client = GitHubSyncClient(
+    github = GitHubSyncClient(
         SYNC_REPO_OWNER, SYNC_REPO_NAME, token, timeout_seconds=SYNC_TIMEOUT_SECONDS
     )
     try:
         merged = sync_log(
-            client=client,
+            client=_remote_client(github),
             device_id=node,
             path_prefix=SYNC_PATH_PREFIX,
             local_log=local_log,
             encode=_encode,
             decode=_decode,
+            # Without this every tick re-downloads every peer's whole log
+            # whether or not anything changed. At 96 ticks a day that is the
+            # traffic the Firebase free tier's monthly budget depends on not
+            # happening.
+            state_store=FileSyncStateStore(SYNC_STATE_FILE),
         )
-    except GitHubSyncError as exc:
+    except (GitHubSyncError, RemoteSyncError) as exc:
         logger.warning("sync failed: %s", exc)
         return SyncOutcome("error", 0, 0, str(exc))
 
