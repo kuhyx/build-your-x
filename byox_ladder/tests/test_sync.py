@@ -106,7 +106,7 @@ def test_run_sync_ok_writes_merged(
         {"u1": ProgressEntry("u1", done=True, note="n", updated_ms=5)}, "pc"
     )
     monkeypatch.setattr(_sync, "GitHubSyncClient", lambda *a, **k: object())
-    monkeypatch.setattr(_sync, "sync_log", lambda **_k: merged)
+    monkeypatch.setattr(_sync, "sync_log", lambda *_a, **_k: merged)
     outcome = run_sync(progress_path=progress_path, token_file=_token(tmp_path))
     assert outcome.status == "ok"
     assert (outcome.total, outcome.done) == (1, 1)
@@ -116,7 +116,7 @@ def test_run_sync_ok_writes_merged(
 def test_run_sync_error_is_caught(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    def _boom(**_kwargs: object) -> None:
+    def _boom(*_args: object, **_kwargs: object) -> None:
         message = "nope"
         raise GitHubSyncError(message)
 

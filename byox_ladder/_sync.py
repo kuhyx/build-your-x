@@ -30,9 +30,12 @@ from crdt_sync import (
     GitHubSyncClient,
     GitHubSyncError,
     Hlc,
+    LogCodec,
     Record,
     RemoteStore,
     RemoteSyncError,
+    RevisionTracking,
+    SyncTarget,
     mirror_client_for,
     sync_log,
 )
@@ -222,17 +225,19 @@ def run_sync(
     )
     try:
         merged = sync_log(
-            client=_remote_client(github),
-            device_id=node,
-            path_prefix=SYNC_PATH_PREFIX,
-            local_log=local_log,
-            encode=_encode,
-            decode=_decode,
-            # Without this every tick re-downloads every peer's whole log
-            # whether or not anything changed. At 96 ticks a day that is the
-            # traffic the Firebase free tier's monthly budget depends on not
-            # happening.
-            state_store=FileSyncStateStore(SYNC_STATE_FILE),
+            SyncTarget(
+                client=_remote_client(github),
+                device_id=node,
+                path_prefix=SYNC_PATH_PREFIX,
+            ),
+            local_log,
+            LogCodec(
+                decode=_decode,
+                encode=_encode,
+            ),
+            RevisionTracking(
+                state_store=FileSyncStateStore(SYNC_STATE_FILE),
+            ),
         )
     except (GitHubSyncError, RemoteSyncError) as exc:
         logger.warning("sync failed: %s", exc)
