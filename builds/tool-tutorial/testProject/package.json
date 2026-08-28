@@ -11,7 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "cosmiconfig": "^9.0.2",
-    "debug": "^4.4.3"
+    "cosmiconfig": "10.0.0",
+    "debug": "4.4.3"
   }
 }
