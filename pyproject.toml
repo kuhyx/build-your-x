@@ -2,7 +2,7 @@
 name = "byox_ladder"
 version = "1.0.0"
 description = "Build-Your-Own-X difficulty ladder + synced progress tracker"
-requires-python = ">=3.10"
+requires-python = ">=3.14"
 dependencies = [
     # Shared cross-device sync layer (GitHub-Contents-API CRDT log). Pins the
     # same release family diet_guard/screen-locker use.
