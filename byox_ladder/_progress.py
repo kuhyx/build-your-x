@@ -87,7 +87,7 @@ def load_progress(path: Path) -> Progress:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         return {}
-    except (OSError, ValueError):
+    except OSError, ValueError:
         logger.warning("could not read progress at %s; starting empty", path)
         return {}
     progress: Progress = {}
