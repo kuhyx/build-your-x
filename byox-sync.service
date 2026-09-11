@@ -8,5 +8,5 @@ Type=oneshot
 # PYTHONPATH lets the system interpreter import the package straight from the
 # checkout even if the editable install landed in a different interpreter's
 # site-packages (the failure mode the crdt-sync migration skill warns about).
-Environment=PYTHONPATH=%h/build_your_x
+Environment=PYTHONPATH=%h/src/build-your-x
 ExecStart=/usr/bin/python -m byox_ladder sync
