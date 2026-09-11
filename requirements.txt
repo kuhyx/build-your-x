@@ -4,10 +4,10 @@ coverage==7.16.0
 crdt-sync @ git+https://github.com/kuhyx/utils@crdt-sync-v0.9.1#subdirectory=crdt-sync
 mypy==2.3.1
 pre-commit==4.6.2
-pylint==4.0.7
+pylint==4.0.8
 pytest==9.1.1
 pytest-cov==7.1.0
-pytest-randomly==4.1.0
+pytest-randomly==5.0.0
 pytest-xdist==3.8.0
-ruff==0.16.5
-types-requests==2.33.0.20260712
+ruff==0.16.7
+types-requests==2.33.0.20260906
